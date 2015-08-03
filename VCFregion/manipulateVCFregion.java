@@ -1,20 +1,9 @@
 package VCFregion;
 
-import java.io.File;
-import java.util.Collection;
-import java.util.List;
-
-//import javax.media.jai.ROI;
-
-import org.broad.igv.Globals;
-import org.broad.igv.util.ResourceLocator;
+import java.util.ArrayList;
 import org.broad.igv.feature.RegionOfInterest;
-import org.broad.igv.feature.genome.Genome;
-import org.broad.igv.feature.genome.GenomeManager;
-import org.broad.igv.ui.IGV;
-import org.broad.igv.util.LongRunningTask;
-import org.broad.igv.util.NamedRunnable;
 
+import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFileReader;
 
@@ -22,40 +11,48 @@ public class manipulateVCFregion{
 	
 	VariantContext variantContext;
 	static String VCFfile;
-	//RegionOfInterest reg;
-	
-	//public manipulateVCFregion(){}
-	
-	//public manipulateVCFregion(RegionOfInterest roi) {
-	//	this.roi = roi;
-	//}
 
 	public String getPaths(){
 		return VCFfile;
 	}
 	
 	public void setPaths(String filesIn){
-		this.VCFfile = filesIn;
+		VCFfile = filesIn;
 		System.out.println(VCFfile);
 	}
 
+	public VCFFileReader readVCFfile(){
+		java.io.File inVCF = new java.io.File(VCFfile);
+		VCFFileReader vcfData = new VCFFileReader(inVCF, false);
+		vcfData.close();
+		return vcfData;
+	}
+	
+	@SuppressWarnings("deprecation")
 	public void getROI(RegionOfInterest reg){
 		int roiStart = reg.getStart();
 		int roiEnd = reg.getEnd();
+		String chr = reg.getChr();
 		
 		System.out.println(roiStart);
 		System.out.println(roiEnd);
 		
-		//vcf variant objects for all variants from start to end
-		java.io.File inVCF = new java.io.File(VCFfile);
-		VCFFileReader vcfData = new VCFFileReader(inVCF, false);
+		VCFFileReader vcfData = readVCFfile();
 		
-		//VariantContext vc = new VariantContext(name, snpLoc, Arrays.asList(Aref, T));
-		//VCFVariant(vc, roi.getChr());
-		vcfData.close();
-
-		System.out.println(vcfData);
-
+		//Queries for records within the region specified. For some reason I cannot use it ;-(
+		//CloseableIterator<VariantContext> vcfRegion = vcfData.query(chr, roiStart, roiEnd);
+		
+		//The loop alternative to query method
+		CloseableIterator<VariantContext> vcfIter = vcfData.iterator();
+		ArrayList<VariantContext> vcfIterRegion = new ArrayList<VariantContext>(); // genotypes in chosen region
+		 
+		while(vcfIter.hasNext()){
+			if(vcfIter.next().getStart() >= roiStart && 
+					vcfIter.next().getStart() <= roiEnd){	
+				System.out.println(vcfIter.next().getStart());
+				vcfIterRegion.add(vcfIter.next());
+			}
+		}
 	}
 	
 	public void saveRegionFile(int start, int end, int chr){
