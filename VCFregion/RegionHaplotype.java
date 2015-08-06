@@ -1,24 +1,26 @@
 package VCFregion;
+import main.Main;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
-import org.broad.igv.feature.RegionOfInterest;
-import VCFregion.manipulateVCFregion;
-import htsjdk.samtools.util.CloseableIterator;
-import htsjdk.variant.variantcontext.VariantContext;
-import htsjdk.variant.vcf.VCFFileReader;
-
-public class RegionHaplotype{
-	File VCFregion;
+public class RegionHaplotype extends manipulateVCFregion{
+	String VCFregion;
+	String outPath;
 	
-	public RegionHaplotype(File VCFregion){
+	public RegionHaplotype(String VCFregion){
 		this.VCFregion = VCFregion;
+		String testOut = "/Users/jagodajablonska/Desktop/out.gt";
+		this.outPath = testOut;
 	}
 	
-	private void runBeagle(){
-		
+	public void runBeagle(){
+		String[] args = {"gt="+VCFregion, "out="+outPath};
+		Main.main(args);	
 	}
+	
+	public void handleBeagleOutput(){
+		//Remember to check if the file was created!
+
+	}
+	
 	
 }
