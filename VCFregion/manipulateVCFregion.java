@@ -16,6 +16,11 @@ public class manipulateVCFregion {
 
 	VariantContext variantContext;
 	static String VCFfile;
+	
+	// Test paths to output files
+	String testOut = "/Users/jagodajablonska/Desktop/out.gt.vcf.gz";
+	String testPath = "/Users/jagodajablonska/Desktop/sample1.vcf";
+	private List<HaplotypeSequence> haploSeqs = new ArrayList<HaplotypeSequence>();
 
 	public String getPaths() {
 		return VCFfile;
@@ -26,33 +31,39 @@ public class manipulateVCFregion {
 		System.out.println(VCFfile);
 	}
 
-	public VCFFileReader readVCFfile() {
-		java.io.File inVCF = new java.io.File(VCFfile);
+	public VCFFileReader readVCFfile(String inFile) {
+		java.io.File inVCF = new java.io.File(inFile);
 		VCFFileReader vcfData = new VCFFileReader(inVCF, false);
 		vcfData.close();
 		return vcfData;
 	}
 
-	public void getROI(RegionOfInterest reg) {
-		int roiStart = reg.getStart();
-		int roiEnd = reg.getEnd();
-		String chr = reg.getChr();
-
-		VCFFileReader vcfData = readVCFfile();
-
+	public List<VariantContext> getVariantContext(VCFFileReader vcfData){
 		// Queries for records within the region specified. For some reason I cannot use it ;-(
 		// CloseableIterator<VariantContext> vcfRegion = vcfData.query(chr,roiStart, roiEnd);
 
 		// The loop alternative to query method
 		CloseableIterator<VariantContext> vcfIter = vcfData.iterator();
-
-		ArrayList<VariantContext> vcfIterRegion = new ArrayList<VariantContext>(); 																			
-		SAMSequenceDictionary refDict = vcfData.getFileHeader().getSequenceDictionary(); // sequence dict for required to save vcf 
 		List<VariantContext> IterCopy = new ArrayList<VariantContext>(); // copy iterator to list so we can refer to the curr element
-		VCFHeader vcfHeader = vcfData.getFileHeader();
 
 		while (vcfIter.hasNext())
 			IterCopy.add(vcfIter.next());
+		
+		return IterCopy;	
+	}
+	
+	public void getROI(RegionOfInterest reg) {
+		int roiStart = reg.getStart();
+		int roiEnd = reg.getEnd();
+		//String chr = reg.getChr();
+
+		VCFFileReader vcfData = readVCFfile(VCFfile);
+		ArrayList<VariantContext> vcfIterRegion = new ArrayList<VariantContext>(); 	
+		List<VariantContext> IterCopy = getVariantContext(vcfData);
+																				
+		SAMSequenceDictionary refDict = vcfData.getFileHeader().getSequenceDictionary(); // sequence dict for required to save vcf 
+		VCFHeader vcfHeader = vcfData.getFileHeader();
+
 
 		System.out.println("start: " + roiStart);
 		System.out.println("end: " + roiEnd);
@@ -66,8 +77,8 @@ public class manipulateVCFregion {
 		System.out.println("size" + vcfIterRegion.size());
 
 		for (VariantContext vc : vcfIterRegion) {
-			System.out.println(vc.toString());
-		}
+			System.out.println(vc.getGenotypes().get(2).getGenotypeString());
+		} 
 
 		try {
 			saveRegionFile(vcfIterRegion, refDict, vcfHeader);
@@ -75,12 +86,12 @@ public class manipulateVCFregion {
 			System.out.println(e);
 		}
 
-		System.out.println("finished!");
+		System.out.println("finished1!");
 		
-		String testPath = "/Users/jagodajablonska/Desktop/sample1.vcf";
         RegionHaplotype haplo = new RegionHaplotype(testPath);
         haplo.runBeagle();
 
+        getSequences(testOut);
 	}
 
 	public void saveRegionFile(ArrayList<VariantContext> vcfIterRegion, SAMSequenceDictionary refDict,
@@ -91,7 +102,7 @@ public class manipulateVCFregion {
 		writerBuilder.setReferenceDictionary(refDict);
 		writerBuilder.setOption(Options.INDEX_ON_THE_FLY);
 		writerBuilder.setBuffer(8192);
-		writerBuilder.setOutputFile("/Users/jagodajablonska/Desktop/sample1.vcf");
+		writerBuilder.setOutputFile(testPath);
 		VariantContextWriter vcWriter = writerBuilder.build();
 
 		// Write file
@@ -101,5 +112,35 @@ public class manipulateVCFregion {
 			vcWriter.add(vc);
 		}
 		vcWriter.close();
+	}
+	
+	public void getSequences(String phasingOut){
+		VCFFileReader vcfPhasingData = readVCFfile(phasingOut);
+		List<VariantContext> PhasingVC = getVariantContext(vcfPhasingData);
+		
+		int numbSamples = PhasingVC.get(0).getNSamples(); //get the number of individuals
+		
+		//Get haplotypes for every sample
+		for(int i=0;i<numbSamples;i++){	
+			String HaploAlt = "";
+			String HaploRef = "";
+			String SampleName = "";
+			for (VariantContext vc : PhasingVC) {
+				SampleName = vc.getGenotypes().get(i).getSampleName();
+				HaploAlt = HaploAlt.concat(vc.getGenotypes().get(i).getAlleles().get(0).getBaseString());
+				HaploRef = HaploRef.concat(vc.getGenotypes().get(i).getAlleles().get(1).getBaseString());
+			}	
+			
+			HaplotypeSequence HapSeq = new HaplotypeSequence(HaploRef, HaploAlt, SampleName);
+			haploSeqs.add(HapSeq);
+		
+		}
+		
+		System.out.println("finished2!");
+
+	}
+	
+	private void deleteTemporaryFiles(){
+		
 	}
 }
