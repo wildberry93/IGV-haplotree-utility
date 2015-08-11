@@ -8,7 +8,7 @@ public class RegionHaplotype extends manipulateVCFregion{
 	
 	public RegionHaplotype(String VCFregion){
 		this.VCFregion = VCFregion;
-		String testOut = "/Users/jagodajablonska/Desktop/out.gt";
+		String testOut = "/Users/jagodajablonska/Desktop/treeTemp/out.gt";
 		this.outPath = testOut;
 	}
 	
