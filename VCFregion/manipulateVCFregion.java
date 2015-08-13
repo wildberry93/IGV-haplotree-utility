@@ -7,7 +7,6 @@ import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.biojava.bio.symbol.IllegalSymbolException;
 import org.broad.igv.feature.RegionOfInterest;
 
 import htsjdk.samtools.SAMSequenceDictionary;
@@ -66,7 +65,7 @@ public class manipulateVCFregion {
 		VCFFileReader vcfData = readVCFfile(VCFfile);
 		ArrayList<VariantContext> vcfIterRegion = new ArrayList<VariantContext>();
 		List<VariantContext> IterCopy = getVariantContext(vcfData);
-
+		
 		SAMSequenceDictionary refDict = vcfData.getFileHeader().getSequenceDictionary(); 
 		VCFHeader vcfHeader = vcfData.getFileHeader();
 
@@ -102,8 +101,8 @@ public class manipulateVCFregion {
 
 		
 		HaploTree tree = new HaploTree(haploSeqs);
+		
 		tree.Seqs2MSA();
-
 		
 		try {
 			deleteTemporaryFiles();
